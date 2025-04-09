@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IcoMoon → Figma Variables</title>
+  <link rel="stylesheet" href="styles/main.css">
+  <script>
+    // Error handling for module loading
+    window.addEventListener('error', function(e) {
+      console.error('Script error:', e);
+      if (e.message.includes('module')) {
+        alert('Error loading modules. Please ensure you\'re using a web server.');
+      }
+    });
+  </script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-content">
+      <div class="header-left">
+        <h1>🦄 IcoMoon → Figma</h1>
+        <div class="icon-counter">
+          <span id="iconCount">0</span> icons loaded
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">    
+    <div class="upload-container">
+      <div class="upload-section" id="jsonDropZone" data-upload-type="json">
+        <h2>Step 1: Upload selection.json</h2>
+        <label for="fileInput" class="upload-button">Choose selection.json</label>
+        <input type="file" id="fileInput" accept=".json" />
+        <p>or drag and drop your file here</p>
+        <div class="file-info" style="display: none;">
+          <span class="file-name"></span>
+          <button class="delete-file" title="Remove file">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M18 6L6 18M6 6l12 12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="upload-section" id="fontDropZone" data-upload-type="font">
+        <h2>Step 2: Upload Font File (Optional)</h2>
+        <label for="fontInput" class="upload-button">Choose Font File</label>
+        <input type="file" id="fontInput" accept=".woff,.woff2,.ttf,.otf" />
+        <p>or drag and drop your font file here</p>
+        <div class="file-info" style="display: none;">
+          <span class="file-name"></span>
+          <button class="delete-file" title="Remove file">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M18 6L6 18M6 6l12 12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="previewSection" style="display: none;">
+      <div class="preview-controls">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="iconSearch" class="search-input" placeholder="Search icons...">
+          <button id="clearSearch" class="clear-search-button">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div class="view-toggle">
+          <button id="gridViewBtn" class="active">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+            </svg>
+            Grid
+          </button>
+          <button id="tableViewBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+            List
+          </button>
+        </div>
+      </div>
+
+      <div class="actions-bar">
+        <div class="selection-info">
+          <div class="selection-count">
+            <span id="selectedCount">0</span> icons selected
+          </div>
+          <button id="clearSelection" class="clear-button" style="display: none;">
+            Clear Selection
+          </button>
+        </div>
+        <div class="export-section">
+          <button id="exportSelected" class="export-button" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M14 3v4a1 1 0 001 1h4" stroke-width="2"/>
+              <path d="M17 21H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z" stroke-width="2"/>
+              <path d="M8 12h8M8 16h8" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Export Selected
+          </button>
+          <button id="exportFigmaCSV" class="export-button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M14 3v4a1 1 0 001 1h4" stroke-width="2"/>
+              <path d="M17 21H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z" stroke-width="2"/>
+              <path d="M8 12h8M8 16h8" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Export Figma CSV
+          </button>
+          <button id="generateFontMap" class="export-button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M14 3v4a1 1 0 001 1h4" stroke-width="2"/>
+              <path d="M17 21H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z" stroke-width="2"/>
+              <path d="M8 12h8M8 16h8" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Generate FontMap
+          </button>
+        </div>
+      </div>
+
+      <div id="gridView" class="preview-grid" style="display: none"></div>
+      <div id="tableView">
+        <table id="outputTable" style="display:none;">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Unicode</th>
+              <th>Glyph</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview Modal -->
+  <div id="previewModal" class="modal">
+    <div class="modal-content">
+      <button class="close-modal" title="Close modal">&times;</button>
+      <div class="modal-icon-preview">
+        <div class="preview-icon">
+          <i class="icon"></i>
+        </div>
+        <div class="icon-info">
+          <div class="icon-info-row">
+            <span class="icon-info-label">Name:</span>
+            <span class="icon-info-value" id="modalIconName"></span>
+          </div>
+          <div class="icon-info-row">
+            <span class="icon-info-label">Unicode:</span>
+            <span class="icon-info-value" id="modalIconUnicode"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast element -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Load modules with defer to ensure DOM is loaded -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script type="module" src="js/main.js" defer></script>
+</body>
+</html>
