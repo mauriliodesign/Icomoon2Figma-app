@@ -249,6 +249,35 @@ function handleJsonFile(file, appState, zone) {
       appState.currentIcons = data.icons;
       appState.fontName = data.preferences?.fontPref?.metadata?.fontFamily || 'icomoon';
       
+      // Check for duplicate names
+      const duplicates = appState.findDuplicateNames();
+      if (duplicates.length > 0) {
+        // Create a formatted message with duplicate names
+        const duplicateNames = duplicates.map(d => `"${d.name}" (${d.count} occurrences)`).join(', ');
+        console.warn('Duplicate icon names found:', duplicateNames);
+        
+        // Show warning to user
+        if (duplicates.length > 3) {
+          showToast(`Warning: ${duplicates.length} duplicate icon names found. Check console for details.`, 5000);
+        } else {
+          showToast(`Warning: Duplicate names found: ${duplicateNames}`, 5000);
+        }
+        
+        // Calculate total duplicates (count - 1 for each duplicate name)
+        const totalDuplicates = duplicates.reduce((sum, d) => sum + d.count - 1, 0);
+        
+        // Display a dialog with options to fix duplicates
+        if (confirm(`${duplicates.length} duplicate icon name(s) found with ${totalDuplicates} total duplicates.\n\nDuplicates can cause problems when exporting to Figma Variables.\n\nWould you like to automatically fix all duplicates now?`)) {
+          // User chose to auto-fix - apply the fixes
+          const result = appState.autoFixDuplicateNames();
+          showToast(`Fixed ${result.fixed} of ${result.total} duplicate names`, 5000);
+          refreshDisplay(appState);
+        } else if (confirm(`Would you like to view a detailed report of all duplicate names?`)) {
+          // Provide a detailed message about the duplicates
+          alert(appState.getDuplicatesReport());
+        }
+      }
+      
       // Show the icons count
       updateIconCount(data.icons.length);
       

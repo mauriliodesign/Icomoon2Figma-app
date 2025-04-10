@@ -67,6 +67,8 @@ body {
 .header-right {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  margin-left: auto;
 }
 
 .container {
@@ -969,4 +971,154 @@ tr:last-child td {
 
 .export-selected:disabled svg path {
   stroke: var(--text);
+}
+
+/* Edit name button styles */
+.view-details-btn {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 120px;
+}
+
+.view-details-btn:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+#outputTable td:last-child, #outputTable th:last-child {
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* Edit name input styles */
+.edit-name-input {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background: var(--background);
+  color: var(--text);
+  margin-left: 0.25rem;
+  width: 160px;
+  transition: all 0.2s ease;
+}
+
+.edit-name-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.3);
+}
+
+/* Nome do ícone com indicação de ser editável */
+.icon-name {
+  font-size: 0.9rem;
+  vertical-align: middle;
+  cursor: text;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+.icon-name:hover {
+  background-color: rgba(0, 122, 255, 0.1);
+}
+
+/* Tooltip to indicate double-click functionality */
+.icon-name::after {
+  content: 'Double-click to edit';
+  position: absolute;
+  background: var(--text);
+  color: var(--background);
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  top: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+  z-index: 10;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.icon-name:hover::after {
+  opacity: 0.8;
+  visibility: visible;
+}
+
+.modal-edit-name-input {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background: var(--background);
+  color: var(--text);
+  width: 100%;
+  max-width: 220px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.modal-edit-name-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.3);
+}
+
+#modalIconName {
+  cursor: text;
+  padding: 2px 4px;
+  border-radius: 3px;
+  position: relative;
+  transition: background-color 0.2s ease;
+}
+
+#modalIconName:hover {
+  background-color: rgba(0, 122, 255, 0.1);
+}
+
+#modalIconName::after {
+  content: 'Double-click to edit';
+  position: absolute;
+  background: var(--text);
+  color: var(--background);
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+  z-index: 20;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+#modalIconName:hover::after {
+  opacity: 0.8;
+  visibility: visible;
+}
+
+.header-button {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.header-button:hover {
+  background: var(--surface);
+  border-color: var(--primary);
 } 

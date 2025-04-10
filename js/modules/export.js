@@ -1,9 +1,15 @@
 import { getSelectedIcons } from './display.js';
+import { showToast } from './toast.js';
 
 let currentIcons = [];
+let appState = null;
 
 export function setCurrentIcons(icons) {
   currentIcons = icons;
+}
+
+export function setAppState(state) {
+  appState = state;
 }
 
 export function initializeExport() {
@@ -12,11 +18,18 @@ export function initializeExport() {
   const exportSVGBtn = document.getElementById('exportSVG');
   const exportJSONBtn = document.getElementById('exportJSON');
   const generateFontMapBtn = document.getElementById('generateFontMap');
+  const resetNamesBtn = document.getElementById('resetNames');
   
   if (exportFigmaCSVBtn) {
     exportFigmaCSVBtn.addEventListener('click', () => {
-      // Export all icons in CSV format
-      exportCSV(currentIcons);
+      // Always use the most up-to-date icons data from appState
+      if (appState && appState.currentIcons) {
+        // Export all icons in CSV format
+        exportCSV(appState.currentIcons);
+      } else {
+        // Fallback to local variable if appState is not available
+        exportCSV(currentIcons);
+      }
     });
   }
 
@@ -50,8 +63,30 @@ export function initializeExport() {
   
   if (generateFontMapBtn) {
     generateFontMapBtn.addEventListener('click', () => {
-      // Export all icons in Simple CSV format with only variableName and unicodeHex
-      exportSimpleCSV(currentIcons);
+      // Always use the most up-to-date icons data from appState
+      if (appState && appState.currentIcons) {
+        // Export all icons in Simple CSV format with only variableName and unicodeHex
+        exportSimpleCSV(appState.currentIcons);
+      } else {
+        // Fallback to local variable if appState is not available
+        exportSimpleCSV(currentIcons);
+      }
+    });
+  }
+  
+  if (resetNamesBtn) {
+    resetNamesBtn.addEventListener('click', () => {
+      if (appState) {
+        if (confirm('Are you sure you want to restart the process? All cached data will be removed and this cannot be undone.')) {
+          appState.clearAllCache();
+          // Reload the page after clearing cache
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        }
+      } else {
+        showToast('Error: App state not available');
+      }
     });
   }
 }

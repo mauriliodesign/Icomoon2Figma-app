@@ -5,9 +5,11 @@ let selectedIcons = new Set();
 let currentIcons = [];
 let searchTerm = '';
 let filteredIcons = [];
+let appState = null; // Global reference to app state
 
-export function refreshDisplay(appState) {
-  currentIcons = appState.currentIcons;
+export function refreshDisplay(state) {
+  appState = state; // Store appState reference
+  currentIcons = state.currentIcons;
   setCurrentIcons(currentIcons);
   filteredIcons = filterIcons(currentIcons);
   
@@ -17,7 +19,7 @@ export function refreshDisplay(appState) {
     previewControls.style.display = currentIcons.length > 0 ? 'flex' : 'none';
   }
   
-  if (appState.currentView === 'grid') {
+  if (state.currentView === 'grid') {
     displayGridView(filteredIcons);
   } else {
     displayTableView(filteredIcons);
@@ -136,10 +138,13 @@ function updateSelectionInfo() {
 }
 
 function toggleIconSelection(iconName, element) {
+  // Check if the icon is already selected
   if (selectedIcons.has(iconName)) {
+    // Remove from selection
     selectedIcons.delete(iconName);
     element.classList.remove('selected');
   } else {
+    // Add to selection
     selectedIcons.add(iconName);
     element.classList.add('selected');
   }
@@ -184,7 +189,6 @@ function displayGridView(icons) {
       <input type="checkbox" class="icon-checkbox" ${selectedIcons.has(name) ? 'checked' : ''}>
       <i class="icon">${unicodeChar}</i>
       <div class="preview-name">${name}</div>
-      <button class="copy-button" data-unicode="${unicodeChar}" data-name="${name}">Copy</button>
     `;
 
     // Add click handler for checkbox
@@ -196,16 +200,9 @@ function displayGridView(icons) {
 
     // Add click handler for the entire item to show modal
     item.addEventListener('click', (e) => {
-      if (!e.target.classList.contains('copy-button') && !e.target.classList.contains('icon-checkbox')) {
+      if (!e.target.classList.contains('icon-checkbox')) {
         showPreviewModal(icon);
       }
-    });
-
-    // Add click handler for copy button
-    const copyButton = item.querySelector('.copy-button');
-    copyButton.addEventListener('click', (e) => {
-      e.stopPropagation();
-      copyToClipboard(unicodeChar, name);
     });
 
     gridContainer.appendChild(item);
@@ -229,18 +226,18 @@ function displayTableView(icons) {
     const name = icon.properties.name;
     const code = icon.properties.code;
     const unicodeChar = String.fromCharCode(code);
-    const unicodeHex = code.toString(16).padStart(4, '0');
 
     const row = document.createElement('tr');
     row.className = selectedIcons.has(name) ? 'selected' : '';
     row.innerHTML = `
       <td>
         <input type="checkbox" class="table-checkbox" ${selectedIcons.has(name) ? 'checked' : ''}>
-        ${name}
+        <span class="icon-name" data-original-name="${name}">${name}</span>
       </td>
-      <td>\\u${unicodeHex}</td>
       <td class="icon">${unicodeChar}</td>
-      <td><button class="copy-button" data-unicode="${unicodeChar}" data-name="${name}">Copy</button></td>
+      <td>
+        <button class="view-details-btn" title="View icon details">View Details</button>
+      </td>
     `;
 
     // Add click handler for checkbox
@@ -255,14 +252,19 @@ function displayTableView(icons) {
     iconCell.addEventListener('click', () => {
       showPreviewModal(icon);
     });
-
-    // Add click handler for copy button
-    const copyButton = row.querySelector('.copy-button');
-    copyButton.addEventListener('click', (e) => {
+    
+    // Add double-click handler for the name span to enable editing
+    const nameSpan = row.querySelector('.icon-name');
+    nameSpan.addEventListener('dblclick', (e) => {
       e.stopPropagation();
-      const unicode = e.target.getAttribute('data-unicode');
-      const iconName = e.target.getAttribute('data-name');
-      copyToClipboard(unicode, iconName);
+      startNameEditing(nameSpan, row, null, null);
+    });
+    
+    // Add view details button functionality
+    const viewDetailsButton = row.querySelector('.view-details-btn');
+    viewDetailsButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showPreviewModal(icon);
     });
 
     tbody.appendChild(row);
@@ -271,6 +273,94 @@ function displayTableView(icons) {
   gridView.style.display = 'none';
   tableView.style.display = 'block';
   if (outputTable) outputTable.style.display = 'table';
+}
+
+// Helper function to start the name editing process
+function startNameEditing(nameSpan, row, copyButton, editButton) {
+  const originalName = nameSpan.getAttribute('data-original-name');
+  const currentName = nameSpan.textContent;
+  
+  // Create input for editing
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = currentName;
+  input.className = 'edit-name-input';
+  
+  // Replace span with input
+  nameSpan.style.display = 'none';
+  
+  const firstCell = row.querySelector('td:first-child');
+  firstCell.appendChild(input);
+  input.focus();
+  
+  // Handle save on enter or blur
+  const saveEdit = () => {
+    const newName = input.value.trim();
+    if (newName && newName !== currentName) {
+      // Check if the name already exists
+      const iconIndex = appState.currentIcons.findIndex(icon => 
+        icon.properties.name === originalName
+      );
+      
+      if (appState.nameExists(newName, iconIndex)) {
+        // Get a suggested name that doesn't exist
+        const suggestedName = appState.getSuggestedName(newName, iconIndex);
+        
+        // Show warning about duplicate name with suggestion
+        if (!confirm(`An icon with the name "${newName}" already exists. Using duplicate names may cause issues when exporting.\n\nWould you like to use "${suggestedName}" instead to avoid duplicates?`)) {
+          // User chose not to use suggested name - ask if they want to proceed with duplicate
+          if (!confirm("Do you want to proceed with the duplicate name anyway?")) {
+            // User chose to cancel, restore original state
+            nameSpan.style.display = 'inline';
+            input.remove();
+            return;
+          }
+        } else {
+          // User chose to use the suggested name
+          input.value = suggestedName;
+        }
+      }
+      
+      // Update in app state
+      if (appState.updateIconName(originalName, input.value.trim())) {
+        // Update the name in the DOM
+        nameSpan.textContent = input.value.trim();
+        nameSpan.setAttribute('data-original-name', input.value.trim());
+        
+        // Update copyButton if it exists
+        if (copyButton) {
+          copyButton.setAttribute('data-name', input.value.trim());
+        }
+        
+        // Update editButton if it exists
+        if (editButton) {
+          editButton.setAttribute('data-name', input.value.trim());
+        }
+        
+        // Update in selectedIcons Set if selected
+        if (selectedIcons.has(originalName)) {
+          selectedIcons.delete(originalName);
+          selectedIcons.add(input.value.trim());
+        }
+      }
+    }
+    
+    // Clean up
+    nameSpan.style.display = 'inline';
+    input.remove();
+  };
+  
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveEdit();
+    } else if (e.key === 'Escape') {
+      nameSpan.style.display = 'inline';
+      input.remove();
+    }
+  });
+  
+  input.addEventListener('blur', saveEdit);
 }
 
 function initializeModal() {
@@ -302,7 +392,96 @@ function showPreviewModal(icon) {
   // Update icon and information
   iconElement.textContent = unicodeChar;
   nameElement.textContent = icon.properties.name;
+  nameElement.setAttribute('data-original-name', icon.properties.name);
   unicodeElement.textContent = `\\u${unicodeHex}`;
+  
+  // Add double-click handler for the name element to enable editing
+  nameElement.addEventListener('dblclick', function(e) {
+    e.stopPropagation();
+    
+    // Create input for editing
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = nameElement.textContent;
+    input.className = 'modal-edit-name-input';
+    
+    // Replace span with input
+    const originalName = nameElement.getAttribute('data-original-name');
+    nameElement.style.display = 'none';
+    
+    const nameContainer = nameElement.parentNode;
+    nameContainer.appendChild(input);
+    input.focus();
+    
+    // Handle save on enter or blur
+    const saveModalEdit = () => {
+      const newName = input.value.trim();
+      if (newName && newName !== originalName) {
+        // Check if the name already exists
+        const iconIndex = appState.currentIcons.findIndex(icon => 
+          icon.properties.name === originalName
+        );
+        
+        if (appState.nameExists(newName, iconIndex)) {
+          // Get a suggested name that doesn't exist
+          const suggestedName = appState.getSuggestedName(newName, iconIndex);
+          
+          // Show warning about duplicate name with suggestion
+          if (!confirm(`An icon with the name "${newName}" already exists. Using duplicate names may cause issues when exporting.\n\nWould you like to use "${suggestedName}" instead to avoid duplicates?`)) {
+            // User chose not to use suggested name - ask if they want to proceed with duplicate
+            if (!confirm("Do you want to proceed with the duplicate name anyway?")) {
+              // User chose to cancel, restore original state
+              nameElement.style.display = 'inline';
+              input.remove();
+              return;
+            }
+          } else {
+            // User chose to use the suggested name
+            input.value = suggestedName;
+          }
+        }
+        
+        // Update in app state
+        if (appState.updateIconName(originalName, input.value.trim())) {
+          // Update the name in the DOM
+          nameElement.textContent = input.value.trim();
+          nameElement.setAttribute('data-original-name', input.value.trim());
+          
+          // Update the icon object for consistency
+          icon.properties.name = input.value.trim();
+          
+          // Update in selectedIcons Set if selected
+          if (selectedIcons.has(originalName)) {
+            selectedIcons.delete(originalName);
+            selectedIcons.add(input.value.trim());
+          }
+          
+          // Refresh the table/grid view to reflect the changes
+          if (appState.currentView === 'grid') {
+            displayGridView(filteredIcons);
+          } else {
+            displayTableView(filteredIcons);
+          }
+        }
+      }
+      
+      // Clean up
+      nameElement.style.display = 'inline';
+      input.remove();
+    };
+    
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveModalEdit();
+      } else if (e.key === 'Escape') {
+        nameElement.style.display = 'inline';
+        input.remove();
+      }
+    });
+    
+    input.addEventListener('blur', saveModalEdit);
+  });
   
   // Show modal
   modal.style.display = 'block';
@@ -310,5 +489,9 @@ function showPreviewModal(icon) {
 
 // Export the selected icons for other modules to use
 export function getSelectedIcons() {
-  return currentIcons.filter(icon => selectedIcons.has(icon.properties.name));
+  // Ensure we're using the most up-to-date icons data from the app state
+  const icons = appState ? appState.currentIcons : currentIcons;
+  
+  // Filter based on the selection set which has been updated during name changes
+  return icons.filter(icon => selectedIcons.has(icon.properties.name));
 } 
