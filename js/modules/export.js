@@ -24,11 +24,11 @@ export function initializeExport() {
     exportFigmaCSVBtn.addEventListener('click', () => {
       // Always use the most up-to-date icons data from appState
       if (appState && appState.currentIcons) {
-        // Export all icons in CSV format
+      // Export all icons in CSV format
         exportCSV(appState.currentIcons);
       } else {
         // Fallback to local variable if appState is not available
-        exportCSV(currentIcons);
+      exportCSV(currentIcons);
       }
     });
   }
@@ -92,36 +92,22 @@ export function initializeExport() {
 }
 
 function exportCSV(icons) {
-  // Define CSV headers according to the required format
-  const headers = [
-    'variableName',  // Required: The variable name
-    'category',      // Required: The variable group name
-    'unicode',       // Additional: Unicode character
-    'unicodeHex',    // Additional: Unicode hex value
-    'tags'          // Additional: Tags if any
-  ];
-
-  // Create CSV content
-  const csvContent = [
-    // Add headers
-    headers.join(','),
-    // Add data rows
-    ...icons.map(icon => {
-      const name = escapeCsvValue(icon.properties.name);
-      const code = icon.properties.code;
-      const unicodeChar = String.fromCharCode(code);
-      const unicodeHex = `\\u${code.toString(16).padStart(4, '0')}`;
-      const tags = icon.properties.tags ? escapeCsvValue(icon.properties.tags.join(', ')) : '';
-      
-      return [
-        name,           // variableName
-        'icons',        // category (fixed as 'icons' for now)
-        unicodeChar,    // unicode
-        unicodeHex,     // unicodeHex
-        tags           // tags
-      ].join(',');
-    })
-  ].join('\n');
+  // Create CSV content without headers
+  const csvContent = icons.map(icon => {
+    const name = escapeCsvValue(icon.properties.name);
+    const code = icon.properties.code;
+    const unicodeChar = String.fromCharCode(code);
+    const unicodeHex = `\\u${code.toString(16).padStart(4, '0')}`;
+    const tags = icon.properties.tags ? escapeCsvValue(icon.properties.tags.join(', ')) : '';
+    
+    return [
+      name,           // variableName
+      'icons',        // category (fixed as 'icons' for now)
+      unicodeChar,    // unicode
+      unicodeHex,     // unicodeHex
+      tags           // tags
+    ].join(',');
+  }).join('\n');
 
   // Generate filename with date and time: FigmaVariables-DDMMYYHM.csv
   const now = new Date();

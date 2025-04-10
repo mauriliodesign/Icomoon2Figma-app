@@ -252,7 +252,7 @@ function displayTableView(icons) {
     iconCell.addEventListener('click', () => {
       showPreviewModal(icon);
     });
-    
+
     // Add double-click handler for the name span to enable editing
     const nameSpan = row.querySelector('.icon-name');
     nameSpan.addEventListener('dblclick', (e) => {
